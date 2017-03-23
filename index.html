@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Docker in Production - Are we there yet?</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/white.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+        <style>
+        .hero {
+            background: white;
+            padding: 0.1em 0.3em;
+            font-weight: 800;
+        }
+        .reveal h2 {
+            color: #c01b00;
+        }
+        ul.logos {
+            list-style: none;
+        }
+        .reveal .logo {
+            width: 25%;
+            height: 100%;
+            float: left;
+            margin: 0 calc(12.5% / 3);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .reveal .logos .top {
+            height: 200px;
+        }
+        .reveal .logos .mid {
+            height: 150px;
+        }
+        .reveal .logos .bot {
+            height: 200px;
+        }
+        .reveal .logos .bot .logo:first-child{
+            margin: 0 calc(12.5% + 12.5% / 3);
+        }
+        .logos > div {
+            clear: both;
+        }
+        .reveal section img {
+            border: 0;
+            box-shadow: none;
+        }
+
+        .reveal .author {
+            margin: 0;
+        }
+        </style>    
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides"> 
+                <section>
+                    <h2 class="hero">Docker in Production<br/>Are we there yet?</h2>
+                    <video width="50%" height="50%" autoplay loop>
+                      <source src="videos/are-we-there-yet.mp4" type="video/mp4">
+                    </video>
+                    <div>
+                    <div style="float:left; width:50%;">
+                    <p class="author">Rolo Mawlabaux <a href="https://twitter.com/kingrolo">@kingrolo</a></p>
+                    <a href="https://wildfish.com"><img src="images/wildfish_logo_white.png" width="160"></a>
+                    </div>
+                    <div>
+                    <p>London Django Meetup<br/>March 2017</p>
+                    </div>
+                    </div>
+                </section>
+                <section>
+                    <img src="images/wildfish_logo_white.png" width="320">
+                    <ul>
+                        <li>Running for 16 years.</li>
+                        <li>Working exclusively in Django since 2009 (since version 1.0).</li>
+                        <li>Look after around 30 production sites.</li>
+                    </ul>
+
+                </section>
+                <section>
+                    <img src="images/its-complicated.png" width="90%">
+                </section>
+                <section>
+                    <h2>The Promise</h2>
+                    <ul>
+                        <li>Dockerfiles are so simple!</li>
+                        <li>Serverless world.</li>
+                        <li>Dev/CI/Prod parity.</li>
+                    </ul>
+                </section>
+                <section data-markdown>
+                    	<script type="text/template">
+						## Example Dockerfile
+
+```
+FROM wildfish/django-starter
+
+COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
+
+COPY package.json /usr/src/app/
+RUN npm install --unsafe-perm=true
+
+COPY . /usr/src/app
+
+RUN npm run build
+RUN python manage.py collectstatic --noinput
+
+CMD ["scripts/entrypoint.sh"]
+
+EXPOSE 8000
+```
+                        </script>
+                </section>
+                <section>
+                    <h2>The Reality</h2>
+
+                    <p><quote>@tomm: "all I can see is people trying to solve the problems they caused by using docker"</quote></p>
+
+                    <p>Demos show you how to build containers but not how to run them in prod.</p>
+                    <ul>
+                        <li>Multi container services?</li>
+                        <li>Logging?</li>
+                        <li>Persistent data?</li>
+                        <li>Zero downtime deployment?</li>
+                    </ul>
+                </section>
+                <section>
+                    <img class="stretch" src="images/superhans.jpg" />
+                </section>
+                <section>
+                    <h2>Orchestration Options</h2>
+                    <div class="logos">
+                        <div class="top">
+                            <div class="logo" style="background-image: url(images/ecs-logo.png)"></div>
+                            <div class="logo" style="background-image: url(images/kubernetes-logo.png)"></div>
+                            <div class="logo" style="background-image: url(images/dokku-logo.png)"></div>
+                        </div>
+
+                        <div class="mid">
+                            <div class="logo" style="background-image: url(images/kontena-logo.jpg)"></div>
+                            <div class="logo" style="background-image: url(images/deis-logo.png)"></div>
+                            <div class="logo" style="background-image: url(images/rancher-logo.png)"></div>
+                        </div>
+
+                        <div class="bot">
+                            <div class="logo" style="background-image: url(images/docker-swarm-logo.png)"></div>
+                            <div class="logo" style="background-image: url(images/docker-cloud-logo.png)"></div>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="logo" style="background-image: url(images/ecs-logo.png); height: 150px; margin: -30px -350px 0 150px;"></div><h2>AWS ECS</h2>
+                    <ul>
+                        <li>Fine...</li>
+                        <li>Fairly weighty terraform config.</li>
+                        <li>RDS is convenient (and probably some other AWS services are).</li>
+                        <li>AWS specific / non portable concepts (Task, Service, Agent).</li>
+                        <li>Some stuff held together with shell scripts.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Google Container Engine</h2>
+                    <img src="images/container-engine-diagram.png">
+                    <ul>
+                        <li>Managed Kubernetes cluster.</li>
+                        <li>Free master under 5 nodes.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Google Container Engine</h2>
+                    <ul>
+                        <li>Container registry.</li>
+                        <li>Google for auth.</li>
+                        <li>Google Cloud Storage for CDN.</li>
+                        <li>40% cheaper than AWS.</li>
+                        <li>Just opinionated enough.</li>
+                        <li>Portability if you outgrow it.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Kubernetes in 1 slide</h2>
+                    <p>"Open source platform for automating deployment, scaling and operations of application containers."</p>
+                    <p class="fragment">Or, "a thing that looks after your containers."</p>
+                    <p>YAML manifests describe cluster objects.</p>
+                    <ul>
+                        <li>Service</li>
+                        <li>Deployment</li>
+                        <li>Pod</li>
+                        <li>Ingress</li>
+                        <li>Secrets</li>
+                    </ul>
+                </section>
+                <section data-markdown>
+                    	<script type="text/template">
+						## Deployment Manifest
+
+						```
+						apiVersion: extensions/v1beta1
+						kind: Deployment
+						metadata:
+						  name: django
+						spec:
+						  replicas: 3
+						  template:
+							metadata:
+							  labels:
+								service: django
+							spec:
+							  containers:
+							  - name: django
+								image: wildfish/django-starter-sample
+								env:
+								- name: DJANGO_CONFIGURATION
+								  value: Prod
+								- name: POSTGRES_USER
+								  valueFrom:
+									secretKeyRef:
+									  name: credentials
+									  key: postgres-user
+								- name: POSTGRES_PASSWORD
+								  valueFrom:
+									secretKeyRef:
+									  name: credentials
+									  key: postgres-password
+								- name: GCS_BUCKET
+								  value: media.someexample.com
+								- name: GCS_KEY
+								  valueFrom:
+									secretKeyRef:
+									  name: credentials
+									  key: gcs-key
+								ports:
+								- containerPort: 8000
+						```
+					</script>
+                </section>
+                <section>
+                        <h3>Multi container services?</h3>
+                        <p class="fragment">Manifests</p>
+						<h3>Logging?</h3>
+                        <p class="fragment">StackDriver</p>
+						<h3>Persistent data?</h3>
+                        <p class="fragment">PersistentVolumes</p>
+						<h3>Deployment?</h3>
+                        <p class="fragment">Rolling Updates</p>
+                </section>
+                <section>
+                    <h2>Google Cloud SQL Postgres</h2>
+                    <ul>
+                        <li>Managed Postgres service.</li>
+                    </ul>
+                    <h2>Google Cloud Container Builder</h2>
+                    <ul>
+                        <li>Run image builds inside GCP.</li>
+                        <li>Each build step runs inside a container.</li>
+                        <li>120 free builds per month.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Come back when someone else has figured it out?</h2>
+                    <ul>
+                        <li>Demo Project: <a href="https://github.com/wildfish/kubernetes-django-starter">https://github.com/wildfish/kubernetes-django-starter</a></li>
+                        <li>Blog Walkthrough: <a href="https://wildfish.com/blog/2017/03/14/django-google-container-engine-gke/">https://wildfish.com/blog/2017/03/14/django-google-container-engine-gke/</a></li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>So. Docker in Production - Are we there yet?</h2>
+                    <h2 class="fragment">Yes!</h2>
+                    <p class="fragment">Particularly if this sounds interesting to you or you want to learn something new or you aren't happy with how you currently do DevOps.</p>
+                </section>
+                <section>
+                    <h2>The (possible) future.</h2>
+                    <ul>
+                        <li>k8s cluster across different providers.</li>
+                        <li>k8s ecosystem (eg, kube-lego).</li>
+                        <li>Helm - k8s package manager.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Thanks :)</h2>
+                    <div style="float:left; width:50%;">
+                    <p class="author">Rolo Mawlabaux <a href="https://twitter.com/kingrolo">@kingrolo</a></p>
+                    <a href="https://wildfish.com"><img src="images/wildfish_logo_white.png" width="160"></a>
+                    </div>
+                    <div>
+                    <p>London Django Meetup<br/>March 2017</p>
+                    </div>
+                </section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
